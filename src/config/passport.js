@@ -2,6 +2,11 @@ const passport = require("passport");
 const GithubStrategy = require("passport-github2").Strategy;
 const User = require("../models/User");
 
+const callbackURL =
+  process.env.FRONTEND_URL
+    ? `${process.env.FRONTEND_URL}/api/auth/github/callback`
+    : process.env.GITHUB_CALLBACK_URL || "http://localhost:5000/api/auth/github/callback";
+
 const createStrategyCallback = (accessLevel) => async (accessToken, refreshToken, profile, done) => {
   try {
     const githubId = profile.id?.toString();
@@ -50,9 +55,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.BACKEND_URL 
-        ? `${process.env.BACKEND_URL}/api/auth/github/callback` 
-        : process.env.GITHUB_CALLBACK_URL || "http://localhost:5000/api/auth/github/callback",
+      callbackURL,
       scope: ["user:email", "read:user"],
     },
     createStrategyCallback('public')
@@ -65,9 +68,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.BACKEND_URL 
-        ? `${process.env.BACKEND_URL}/api/auth/github/callback` 
-        : process.env.GITHUB_CALLBACK_URL || "http://localhost:5000/api/auth/github/callback",
+      callbackURL,
       scope: ["user:email", "read:user", "repo"],
     },
     createStrategyCallback('full')
