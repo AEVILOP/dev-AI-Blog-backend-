@@ -35,9 +35,8 @@ console.log(`CORS Frontend URL: ${process.env.FRONTEND_URL}`);
 connectDB();
 
 // ── Security & Proxy ─────────────────────────────────────────────────────────
-// For Render/Vercel (behind proxies), 1 is usually enough, 
-// but 'true' is safer for deep proxy chains
-app.set("trust proxy", 1); 
+// Render/Vercel can sit behind multiple proxies, and secure cookies depend on this.
+app.set("trust proxy", true);
 app.use(
   helmet({
     contentSecurityPolicy: {

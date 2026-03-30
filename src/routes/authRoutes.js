@@ -5,17 +5,22 @@ const { authLimiter } = require("../middleware/rateLimiter");
 
 const router = express.Router();
 
+const startGithubAuth = (scope, strategy) => [
+  authLimiter,
+  (req, res, next) => {
+    req.session.authScope = scope;
+    req.session.save((err) => {
+      if (err) return next(err);
+      return passport.authenticate(strategy)(req, res, next);
+    });
+  },
+];
+
 // Initiate GitHub Public Scope OAuth
-router.get("/github", authLimiter, (req, res, next) => {
-  req.session.authScope = 'public';
-  next();
-}, passport.authenticate('github-public'));
+router.get("/github", ...startGithubAuth("public", "github-public"));
 
 // Initiate GitHub Full Scope OAuth
-router.get("/github/full", authLimiter, (req, res, next) => {
-  req.session.authScope = 'full';
-  next();
-}, passport.authenticate('github-full'));
+router.get("/github/full", ...startGithubAuth("full", "github-full"));
 
 // GitHub Callback handling both strategies
 router.get("/github/callback", (req, res, next) => {
@@ -47,10 +52,18 @@ router.get("/github/callback", (req, res, next) => {
           console.error("Session login error:", loginErr.message);
           return res.redirect(`${process.env.FRONTEND_URL}/login?error=session_failed`);
         }
-        
+
         const redirectTo = req.session.returnTo || "/account";
         delete req.session.returnTo;
-        return res.redirect(`${process.env.FRONTEND_URL}${redirectTo}`);
+
+        return req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr.message);
+            return res.redirect(`${process.env.FRONTEND_URL}/login?error=session_failed`);
+          }
+
+          return res.redirect(`${process.env.FRONTEND_URL}${redirectTo}`);
+        });
       });
     })(req, res, next);
   };
