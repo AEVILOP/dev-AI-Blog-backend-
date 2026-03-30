@@ -35,7 +35,9 @@ console.log(`CORS Frontend URL: ${process.env.FRONTEND_URL}`);
 connectDB();
 
 // ── Security & Proxy ─────────────────────────────────────────────────────────
-app.set("trust proxy", 1);
+// For Render/Vercel (behind proxies), 1 is usually enough, 
+// but 'true' is safer for deep proxy chains
+app.set("trust proxy", 1); 
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -84,16 +86,27 @@ app.use(
       mongoUrl: process.env.MONGODB_URI,
       ttl: 14 * 24 * 60 * 60,
     }),
-    proxy: true,
+    proxy: true, // Tells express-session to trust the reverse proxy
     name: "devblog.sid",
     cookie: {
       httpOnly: true,
-      secure: isProduction,
+      secure: isProduction, // isProduction must be true for SameSite: None 
       sameSite: isProduction ? "none" : "lax",
       maxAge: 14 * 24 * 60 * 60 * 1000,
     },
   }),
 );
+
+// ── Session Heartbeat (Debug) ────────────────────────────────────────────────
+if (!isProduction) {
+  app.use((req, res, next) => {
+    console.log(`Session Initialized: ${!!req.session}`);
+    if (req.session?.passport?.user) {
+      console.log(`User in session: ${req.session.passport.user}`);
+    }
+    next();
+  });
+}
 
 // ── Passport ─────────────────────────────────────────────────────────────────
 app.use(passport.initialize());
