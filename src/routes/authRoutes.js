@@ -110,7 +110,7 @@ router.post("/logout", (req, res, next) => {
       if (destroyErr) {
         console.error("Session destroy error:", destroyErr.message);
       }
-      res.clearCookie("connect.sid");
+      res.clearCookie("devblog.sid");
       res.json({ message: "Logged out successfully." });
     });
   });

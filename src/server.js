@@ -1,5 +1,8 @@
-// src/server.js
 require("dotenv").config();
+const validateEnv = require("./middleware/validateEnv");
+
+// Ensure all required environment variables are set before starting
+validateEnv();
 
 const express = require("express");
 const cors = require("cors");
@@ -23,17 +26,43 @@ require("./config/passport");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+console.log("--- DevBlog.AI Backend Booting ---");
+console.log(`Port: ${PORT}`);
+console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log(`CORS Frontend URL: ${process.env.FRONTEND_URL}`);
+
 // ── Connect to MongoDB ──────────────────────────────────────────────────────
 connectDB();
 
-// ── Security headers ────────────────────────────────────────────────────────
-app.use(helmet());
+// ── Security & Proxy ─────────────────────────────────────────────────────────
+app.set("trust proxy", 1);
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https://github.com", "https://*.githubusercontent.com"],
+      },
+    },
+  }),
+);
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-// credentials: true is REQUIRED because frontend uses withCredentials
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dev-ai-blog.vercel.app", 
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
@@ -44,21 +73,24 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // ── Sessions ─────────────────────────────────────────────────────────────────
-// connect-mongo so sessions survive server restarts (important on Railway)
+const isProduction = process.env.NODE_ENV === "production";
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "dev-secret-key",
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGODB_URI,
-      ttl: 14 * 24 * 60 * 60, // 14 days
-      autoRemove: "native",
+      ttl: 14 * 24 * 60 * 60,
     }),
+    proxy: true,
+    name: "devblog.sid",
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in ms
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 14 * 24 * 60 * 60 * 1000,
     },
   }),
 );

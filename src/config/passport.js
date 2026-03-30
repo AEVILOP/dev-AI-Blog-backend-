@@ -50,7 +50,9 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
+      callbackURL: process.env.BACKEND_URL 
+        ? `${process.env.BACKEND_URL}/api/auth/github/callback` 
+        : process.env.GITHUB_CALLBACK_URL || "http://localhost:5000/api/auth/github/callback",
       scope: ["user:email", "read:user"],
     },
     createStrategyCallback('public')
@@ -63,7 +65,9 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
+      callbackURL: process.env.BACKEND_URL 
+        ? `${process.env.BACKEND_URL}/api/auth/github/callback` 
+        : process.env.GITHUB_CALLBACK_URL || "http://localhost:5000/api/auth/github/callback",
       scope: ["user:email", "read:user", "repo"],
     },
     createStrategyCallback('full')

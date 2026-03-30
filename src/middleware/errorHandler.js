@@ -1,4 +1,5 @@
 const errorHandler = (err, req, res, next) => {
+  const isProd = process.env.NODE_ENV === 'production';
   //  Logging
   console.error(`[ERROR] ${req.method} ${req.path}`);
   console.error(err);
@@ -61,8 +62,8 @@ const errorHandler = (err, req, res, next) => {
     message:
       statusCode === 500
         ? "Something went wrong on our end. Please try again."
-        : "Request failed.",
-    code: err.code || "SERVER_ERROR",
+        : err.message || "Request failed.",
+    code: isProd && statusCode === 500 ? "INTERNAL_SERVER_ERROR" : err.code || "SERVER_ERROR",
   });
 };
 
