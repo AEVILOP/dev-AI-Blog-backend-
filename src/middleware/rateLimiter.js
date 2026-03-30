@@ -1,19 +1,20 @@
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 
 // key generator for rate limiter
 
-const getkey = (req) => {
-  return req.user ? req.user.id : req.ip;
+const getkey = (req, res) => {
+  return req.user ? req.user.id : ipKeyGenerator(req, res);
 };
 
 // global limiter
 const globalLimiter = rateLimit({
-  windowsMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000,
   max: 200,
-  standardheaders: true,
-  legacyheaders: false,
-  KeyGenerator: getkey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getkey,
   skip: (req) => req.path === "/health",
+  validate: { ip: false, trustProxy: false },
   handler: (req, res) => {
     return res.status(429).json({
       success: false,
@@ -26,11 +27,12 @@ const globalLimiter = rateLimit({
 
 // AI limiter
 const aiLimiter = rateLimit({
-  windowsMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000,
   max: 10,
-  standardheaders: true,
-  legacyheaders: false,
-  KeyGenerator: getkey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getkey,
+  validate: { ip: false, trustProxy: false },
   handler: (req, res) => {
     return res.status(429).json({
       success: false,
@@ -43,11 +45,12 @@ const aiLimiter = rateLimit({
 
 // Auth Limiter
 const authLimiter = rateLimit({
-  windowsMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000,
   max: 10,
-  standardheaders: true,
-  legacyheaders: false,
-  KeyGenerator: (req) => req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
+  validate: { ip: false, trustProxy: false },
   handler: (req, res) => {
     return res.status(429).json({
       success: false,

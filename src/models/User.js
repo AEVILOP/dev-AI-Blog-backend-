@@ -13,9 +13,10 @@ const userSchema = new mongoose.Schema(
     githubId: { type: String, required: true, unique: true },
     username: { type: String, required: true },
     email: { type: String, default: null },
-    avatarURL: { type: String, default: null },
+    avatarUrl: { type: String, default: null },
     githubUsername: { type: String, default: null },
-    githubAccesstoken: { type: String, default: true },
+    githubAccessToken: { type: String, default: null },
+    accessLevel: { type: String, enum: ['public', 'full'], default: 'public' },
 
     // daily generation tracking
     dailyGenerations: { type: Number, default: 0 },

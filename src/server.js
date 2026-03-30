@@ -5,7 +5,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const connectMongo = require("connect-mongo");
+const MongoStore = connectMongo.default || connectMongo;
 const passport = require("passport");
 
 const connectDB = require("./config/db");
@@ -32,7 +33,7 @@ app.use(helmet());
 // credentials: true is REQUIRED because frontend uses withCredentials
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
@@ -55,9 +56,8 @@ app.use(
       autoRemove: "native",
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in ms
     },
   }),

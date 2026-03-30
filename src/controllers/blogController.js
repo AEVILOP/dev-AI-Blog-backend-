@@ -91,7 +91,6 @@ exports.getMyBlogs = async (req, res, next) => {
   try {
     const blogs = await Blog.find({
       author: req.user._id,
-      isUnfinished: { $ne: true },
     })
       .sort({ createdAt: -1 })
       .lean();
@@ -181,6 +180,8 @@ exports.updateBlog = async (req, res, next) => {
       "coverImage",
       "category",
       "tone",
+      "isPublished",
+      "isUnfinished",
     ];
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) {

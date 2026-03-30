@@ -164,7 +164,7 @@ const processReadme = (raw) => {
       snippets: [],
       score: 0,
       quality: "low",
-      warning: "TEMPLATE",
+      warning: "TEMPLATE_README",
     };
   }
 

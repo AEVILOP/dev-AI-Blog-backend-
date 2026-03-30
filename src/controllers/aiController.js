@@ -193,10 +193,10 @@ exports.generateBlog = async (req, res, next) => {
 
     const currentCount = await checkAndResetDailyLimit(user);
 
-    if (!isRegeneration && currentCount >= 5) {
+    if (!isRegeneration && currentCount >= 10) {
       return res.status(429).json({
         message:
-          "You have reached your daily limit of 5 blog generations. Come back tomorrow.",
+          "You have reached your daily limit of 10 blog generations. Come back tomorrow.",
         code: "DAILY_LIMIT_REACHED",
         resetsAt: "midnight",
       });

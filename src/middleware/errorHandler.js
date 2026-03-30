@@ -65,3 +65,5 @@ const errorHandler = (err, req, res, next) => {
     code: err.code || "SERVER_ERROR",
   });
 };
+
+module.exports = errorHandler;
