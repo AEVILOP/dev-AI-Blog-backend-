@@ -1,6 +1,16 @@
 # ⚙️ Dev-AI-Blog Backend
 
-> REST API powering authentication, blog management, and AI API integration.
+> REST API powering **[DevBlog.AI](https://dev-ai-blog.vercel.app)** — an AI-assisted developer blogging platform that generates blog posts from your GitHub repositories.
+
+---
+
+## 📖 API Documentation
+
+Interactive Swagger docs are available at:
+
+**🔗 [https://dev-ai-blog-backend.onrender.com/api-docs](https://dev-ai-blog-backend.onrender.com/api-docs)**
+
+The raw OpenAPI 3.0 JSON spec is available at `/api-docs.json`.
 
 ---
 
@@ -16,9 +26,9 @@ This backend provides the core infrastructure for the Dev-AI-Blog platform.
 
 It handles:
 
-* User authentication and authorization
+* User authentication and authorization (via GitHub OAuth)
 * Blog data management
-* Integration with AI APIs for content generation
+* Integration with AI APIs (Groq/Gemini) for content generation
 * Structured API request handling
 
 ---
@@ -30,131 +40,116 @@ It handles:
 | Runtime   | Node.js       |
 | Framework | Express.js    |
 | Database  | MongoDB Atlas |
-| Auth      | JWT           |
-| Security  | Rate Limiting |
+| Auth      | GitHub OAuth 2.0 + express-session |
+| Docs      | Swagger UI (swagger-jsdoc + swagger-ui-express) |
+| Security  | Rate Limiting + Helmet + CORS |
+| AI        | Groq (primary) / Gemini (fallback) |
 | Hosting   | Render        |
 
 ---
 
-## 🔥 Features
+## 🗂️ API Endpoints Summary
 
-* 🔐 JWT Authentication & Authorization
-* 👤 User-specific blog access
-* 📝 Blog CRUD APIs
-* ⚡ RESTful API design
-* 🛡️ Route-level rate limiting
-* ❗ Centralized error handling
-* 📦 Modular backend architecture
+| Tag | Method | Endpoint | Auth |
+|---|---|---|---|
+| **Health** | GET | `/health` | Public |
+| **Auth** | GET | `/api/auth/github` | Public |
+| **Auth** | GET | `/api/auth/github/full` | Public |
+| **Auth** | GET | `/api/auth/github/callback` | Public |
+| **Auth** | GET | `/api/auth/me` | 🔒 |
+| **Auth** | POST | `/api/auth/logout` | 🔒 |
+| **Blogs** | GET | `/api/blogs` | Public |
+| **Blogs** | GET | `/api/blogs/:id` | Public |
+| **Blogs** | GET | `/api/blogs/user/me` | 🔒 |
+| **Blogs** | POST | `/api/blogs` | 🔒 |
+| **Blogs** | PUT | `/api/blogs/:id` | 🔒 |
+| **Blogs** | DELETE | `/api/blogs/:id` | 🔒 |
+| **Blogs** | PATCH | `/api/blogs/:id/publish` | 🔒 |
+| **AI** | POST | `/api/ai/generate` | 🔒 |
+| **AI** | GET | `/api/ai/pending-draft` | 🔒 |
+| **AI** | DELETE | `/api/ai/pending-draft` | 🔒 |
+| **GitHub** | GET | `/api/github/repos` | 🔒 |
+| **GitHub** | GET | `/api/github/repos/:owner/:repo/readme` | 🔒 |
+| **GitHub** | GET | `/api/github/repos/:owner/:repo/commits` | 🔒 |
+| **GitHub** | POST | `/api/github/validate-repo` | 🔒 |
 
----
-
-## 📡 API Endpoints
-
-### Auth Routes
-
-```
-POST   /api/auth/register  
-POST   /api/auth/login  
-```
-
-### Blog Routes
-
-```
-GET    /api/blogs  
-POST   /api/blogs  
-PUT    /api/blogs/:id  
-DELETE /api/blogs/:id  
-```
+> 🔒 = Requires a valid session cookie (set automatically after GitHub OAuth login).
 
 ---
 
-## 🧪 Request Flow
+## 🏗️ Project Structure
 
 ```
-Client → Request  
-       → Rate Limiter  
-       → Auth Middleware  
-       → Controller  
-       → Database  
-       → Response  
-```
-
----
-
-## 🧠 Key Engineering Decisions
-
-* Used JWT for stateless authentication
-* Structured project into controllers, routes, and middleware
-* Applied rate limiting on critical endpoints to prevent abuse
-* Designed RESTful APIs for maintainability and clarity
-
----
-
-## 🧪 API Testing
-
-Tested using Postman for authentication and blog endpoints.
-
----
-
-## 🏗️ Installation
-
-```bash
-git clone https://github.com/AEVILOP/dev-AI-Blog-backend.git
-cd dev-AI-Blog-backend
-npm install
+src/
+├── server.js              — Express app: CORS, sessions, passport, routes, Swagger
+├── config/
+│   ├── db.js              — MongoDB connection with reconnect logging
+│   ├── passport.js        — GitHub OAuth strategies + serialize/deserialize
+│   └── swagger.js         — OpenAPI 3.0 spec definition
+├── models/
+│   ├── User.js            — isGenerating flag, pendingDraftId, daily counter
+│   └── Blog.js            — isUnfinished flag, compound index on author+repoName
+├── controllers/
+│   ├── authController.js  — OAuth flow, getMe, logout with session destroy
+│   ├── blogController.js  — Full CRUD + togglePublish
+│   ├── githubController.js — Repos, readme, commits, validate
+│   └── aiController.js    — Full AI generation pipeline
+├── services/
+│   ├── readmeService.js   — Injection patterns, template detection, smart extraction
+│   ├── promptBuilder.js   — README delimiters, tone, variation instructions
+│   ├── githubService.js   — Token expiry, rate limit, 404 handling
+│   ├── groqService.js     — Groq API call
+│   └── mistralService.js  — Mistral fallback
+├── middleware/
+│   ├── authMiddleware.js  — requireAuth guard
+│   ├── rateLimiter.js     — Global / AI / auth limiters
+│   ├── validateEnv.js     — Startup env var validation
+│   └── errorHandler.js    — Mongoose errors, CastError, 500 fallback
+└── routes/
+    ├── authRoutes.js
+    ├── blogRoutes.js
+    ├── githubRoutes.js
+    └── aiRoutes.js
 ```
 
 ---
 
 ## 🔑 Environment Variables
 
+Copy `.env.example` to `.env` and fill in your values:
+
 ```env
-MONGO_URI=your_mongodb_uri  
-JWT_SECRET=your_secret  
-PORT=5000  
-NODE_ENV=development  
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=your_mongodb_uri
+SESSION_SECRET=your_secret
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+GITHUB_CALLBACK_URL=http://localhost:5000/api/auth/github/callback
+FRONTEND_URL=http://localhost:5173
+GROQ_API_KEY=your_groq_api_key
 ```
 
 ---
 
-## ▶️ Run Server
+## 🏗️ Installation & Run
 
 ```bash
+git clone https://github.com/AEVILOP/dev-AI-Blog-backend.git
+cd dev-AI-Blog-backend
+npm install
 npm run dev
 ```
 
----
-
-## 📁 Project Structure
-
-```
-├── config/
-├── controllers/
-├── models/
-├── routes/
-├── middleware/
-├── utils/
-└── server.js
-```
+Swagger UI will be available at **http://localhost:5000/api-docs**.
 
 ---
 
 ## ⚠️ Limitations
 
-* In-memory rate limiting (not suitable for distributed systems)
-* No caching layer (Redis not implemented yet)
-* No centralized logging or monitoring
+* In-memory rate limiting (not suitable for distributed systems without Redis store)
 * Basic request validation
-
----
-
-## 🔮 Future Improvements
-
-* 🚀 Redis-based rate limiting
-* 📊 Logging & monitoring
-* ⚡ Caching layer
-* 🔐 Role-based access control
-* 🧪 Automated testing
+* No centralized remote logging
 
 ---
 

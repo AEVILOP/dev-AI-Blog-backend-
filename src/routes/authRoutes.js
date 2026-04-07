@@ -16,13 +16,60 @@ const startGithubAuth = (scope, strategy) => [
   },
 ];
 
-// Initiate GitHub Public Scope OAuth
+/**
+ * @swagger
+ * /api/auth/github:
+ *   get:
+ *     summary: Initiate GitHub OAuth (public scope)
+ *     description: |
+ *       Redirects the user to GitHub to authorize the application with **public** scope
+ *       (read access to public repos and profile). After authorization, GitHub redirects
+ *       back to `/api/auth/github/callback`.
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to GitHub authorization page
+ */
 router.get("/github", ...startGithubAuth("public", "github-public"));
 
-// Initiate GitHub Full Scope OAuth
+/**
+ * @swagger
+ * /api/auth/github/full:
+ *   get:
+ *     summary: Initiate GitHub OAuth (full scope)
+ *     description: |
+ *       Redirects the user to GitHub to authorize the application with **repo** scope
+ *       (read access to private repos). Required for generating blogs from private repositories.
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to GitHub authorization page with expanded permissions
+ */
 router.get("/github/full", ...startGithubAuth("full", "github-full"));
 
-// GitHub Callback handling both strategies
+/**
+ * @swagger
+ * /api/auth/github/callback:
+ *   get:
+ *     summary: GitHub OAuth callback
+ *     description: |
+ *       GitHub redirects here after the user grants (or denies) authorization.
+ *       On success the user session is created and the browser is redirected to the frontend.
+ *       On failure the browser is redirected with an `?error=` query parameter.
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema: { type: string }
+ *         description: Temporary OAuth code issued by GitHub
+ *       - in: query
+ *         name: error
+ *         schema: { type: string, enum: [access_denied] }
+ *         description: Present when the user denies authorization
+ *     responses:
+ *       302:
+ *         description: Redirect to frontend `/account` on success or `/login?error=…` on failure
+ */
 router.get("/github/callback", (req, res, next) => {
   const tryAuth = (strategyName, fallBackStrategy = null) => {
     passport.authenticate(strategyName, (err, user, info) => {
@@ -80,7 +127,29 @@ router.get("/github/callback", (req, res, next) => {
   tryAuth('github-public', 'github-full');
 });
 
-// Get current user
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user 🔒
+ *     description: Returns the profile of the currently logged-in user based on their session cookie.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Authenticated user object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get("/me", (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({
@@ -114,7 +183,27 @@ router.get("/me", (req, res) => {
   });
 });
 
-// Logout
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Log out the current user 🔒
+ *     description: Destroys the user's session and clears the session cookie.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logged out successfully.
+ */
 router.post("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
