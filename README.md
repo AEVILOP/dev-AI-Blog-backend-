@@ -1,177 +1,52 @@
-# ⚙️ Dev-AI-Blog Backend
+<p align="center">
+  <img src="https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Groq-LLaMA_3.3-FF6B35?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Gemini-1.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" />
+</p>
 
-> REST API powering **[DevBlog.AI](https://dev-ai-blog.vercel.app)** — an AI-assisted developer blogging platform that generates blog posts from your GitHub repositories.
+<h1 align="center">DevBlog.AI — Backend API</h1>
 
----
+<p align="center">
+  <strong>REST API powering DevBlog.AI — an AI-assisted developer blogging platform.</strong>
+</p>
 
-## 📖 API Documentation
-
-Interactive Swagger docs are available at:
-
-**🔗 [https://dev-ai-blog-backend.onrender.com/api-docs](https://dev-ai-blog-backend.onrender.com/api-docs)**
-
-The raw OpenAPI 3.0 JSON spec is available at `/api-docs.json`.
-
----
-
-## 🌐 Live API
-
-👉 https://dev-ai-blog-backend.onrender.com
-
----
-
-## 📌 Overview
-
-This backend provides the core infrastructure for the Dev-AI-Blog platform.
-
-It handles:
-
-* User authentication and authorization (via GitHub OAuth)
-* Blog data management
-* Integration with AI APIs (Groq/Gemini) for content generation
-* Structured API request handling
+<p align="center">
+  <a href="https://dev-ai-blog-backend.onrender.com/api-docs">📖 Live Swagger Docs</a> &nbsp;·&nbsp;
+  <a href="https://dev-ai-blog.vercel.app">🔗 Frontend App</a> &nbsp;·&nbsp;
+  <a href="https://dev-ai-blog-backend.onrender.com/health">❤️ Health Check</a>
+</p>
 
 ---
 
-## 🛠️ Tech Stack
+> **See the [frontend README](https://github.com/AEVILOP/DevAIBlog) for the full project overview, screenshots, and architecture diagram.**
 
-| Layer     | Technology    |
-| --------- | ------------- |
-| Runtime   | Node.js       |
-| Framework | Express.js    |
-| Database  | MongoDB Atlas |
-| Auth      | GitHub OAuth 2.0 + express-session |
-| Docs      | Swagger UI (swagger-jsdoc + swagger-ui-express) |
-| Security  | Rate Limiting + Helmet + CORS |
-| AI        | Groq (primary) / Gemini (fallback) |
-| Hosting   | Render        |
+This is the backend service. It handles GitHub OAuth, repository data fetching, AI blog generation with dual-model fallback, and all CRUD operations.
 
----
-
-## 🗂️ API Endpoints Summary
-
-| Tag | Method | Endpoint | Auth |
-|---|---|---|---|
-| **Health** | GET | `/health` | Public |
-| **Auth** | GET | `/api/auth/github` | Public |
-| **Auth** | GET | `/api/auth/github/full` | Public |
-| **Auth** | GET | `/api/auth/github/callback` | Public |
-| **Auth** | GET | `/api/auth/me` | 🔒 |
-| **Auth** | POST | `/api/auth/logout` | 🔒 |
-| **Blogs** | GET | `/api/blogs` | Public |
-| **Blogs** | GET | `/api/blogs/:id` | Public |
-| **Blogs** | GET | `/api/blogs/user/me` | 🔒 |
-| **Blogs** | POST | `/api/blogs` | 🔒 |
-| **Blogs** | PUT | `/api/blogs/:id` | 🔒 |
-| **Blogs** | DELETE | `/api/blogs/:id` | 🔒 |
-| **Blogs** | PATCH | `/api/blogs/:id/publish` | 🔒 |
-| **AI** | POST | `/api/ai/generate` | 🔒 |
-| **AI** | GET | `/api/ai/pending-draft` | 🔒 |
-| **AI** | DELETE | `/api/ai/pending-draft` | 🔒 |
-| **GitHub** | GET | `/api/github/repos` | 🔒 |
-| **GitHub** | GET | `/api/github/repos/:owner/:repo/readme` | 🔒 |
-| **GitHub** | GET | `/api/github/repos/:owner/:repo/commits` | 🔒 |
-| **GitHub** | POST | `/api/github/validate-repo` | 🔒 |
-
-> 🔒 = Requires a valid session cookie (set automatically after GitHub OAuth login).
-
----
-
-## 🏗️ Project Structure
-
-```
-src/
-├── server.js              — Express app: CORS, sessions, passport, routes, Swagger
-├── config/
-│   ├── db.js              — MongoDB connection with reconnect logging
-│   ├── passport.js        — GitHub OAuth strategies + serialize/deserialize
-│   └── swagger.js         — OpenAPI 3.0 spec definition
-├── models/
-│   ├── User.js            — isGenerating flag, pendingDraftId, daily counter
-│   └── Blog.js            — isUnfinished flag, compound index on author+repoName
-├── controllers/
-│   ├── authController.js  — OAuth flow, getMe, logout with session destroy
-│   ├── blogController.js  — Full CRUD + togglePublish
-│   ├── githubController.js — Repos, readme, commits, validate
-│   └── aiController.js    — Full AI generation pipeline
-├── services/
-│   ├── readmeService.js   — Injection patterns, template detection, smart extraction
-│   ├── promptBuilder.js   — README delimiters, tone, variation instructions
-│   ├── githubService.js   — Token expiry, rate limit, 404 handling
-│   ├── groqService.js     — Groq API call
-│   └── mistralService.js  — Mistral fallback
-├── middleware/
-│   ├── authMiddleware.js  — requireAuth guard
-│   ├── rateLimiter.js     — Global / AI / auth limiters
-│   ├── validateEnv.js     — Startup env var validation
-│   └── errorHandler.js    — Mongoose errors, CastError, 500 fallback
-└── routes/
-    ├── authRoutes.js
-    ├── blogRoutes.js
-    ├── githubRoutes.js
-    └── aiRoutes.js
-```
-
----
-
-## 🔑 Environment Variables
-
-Copy `.env.example` to `.env` and fill in your values:
-
-```env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=your_mongodb_uri
-SESSION_SECRET=your_secret
-GITHUB_CLIENT_ID=your_client_id
-GITHUB_CLIENT_SECRET=your_client_secret
-GITHUB_CALLBACK_URL=http://localhost:5000/api/auth/github/callback
-FRONTEND_URL=http://localhost:5173
-GROQ_API_KEY=your_groq_api_key
-```
-
----
-
-## 🏗️ Installation & Run
+## Quick Start
 
 ```bash
-git clone https://github.com/AEVILOP/dev-AI-Blog-backend.git
-cd dev-AI-Blog-backend
 npm install
-npm run dev
+cp .env.example .env   # fill in your keys
+npm run dev             # starts on port 5000 with nodemon
 ```
 
-Swagger UI will be available at **http://localhost:5000/api-docs**.
+## API Documentation
 
----
+Interactive Swagger UI is live at `/api-docs` — see all endpoints, schemas, and try them directly.
 
-## ⚠️ Limitations
+**Base URL:** `https://dev-ai-blog-backend.onrender.com`
 
-* In-memory rate limiting (not suitable for distributed systems without Redis store)
-* Basic request validation
-* No centralized remote logging
+## Key Engineering Details
 
----
+- **Dual AI fallback**: Groq (LLaMA 3.3 70B) primary → Gemini 1.5 Flash automatic fallback
+- **12 edge cases** handled in the blog generation controller (concurrent requests, daily limits, tab-close recovery, malformed AI output, etc.)
+- **Commit quality scoring**: Multi-signal algorithm filters noise, scores by prefix/length/keywords/position, deduplicates
+- **README sanitization**: Prompt injection defense, template detection, section extraction, quality scoring
+- **3-tier rate limiting**: Global (200/15min), AI (10/15min), Auth (10/15min)
+- **Cookie-based sessions**: MongoStore persistence, cross-domain support (SameSite=None), 14-day TTL
 
-## 🤝 Contributing
+## License
 
-Fork → Improve → Pull Request
-
----
-
-## 📜 License
-
-MIT License
-
----
-
-## 👨‍💻 Author
-
-**Anirban Banerjee**
-https://github.com/AEVILOP
-
----
-
-## ⭐ Support
-
-Star the repo if you find it useful!
+MIT
