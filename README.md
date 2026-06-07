@@ -38,7 +38,7 @@ Interactive Swagger UI is live at `/api-docs` — see all endpoints, schemas, an
 
 **Base URL:** `https://dev-ai-blog-backend.onrender.com`
 
-## Key Engineering Details
+## Architecture Decisions
 
 - **Dual AI fallback**: Groq (LLaMA 3.3 70B) primary → Gemini 1.5 Flash automatic fallback
 - **12 edge cases** handled in the blog generation controller (concurrent requests, daily limits, tab-close recovery, malformed AI output, etc.)
